@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text on Image</title>
+
+  <!-- Import Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Freckle+Face&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    canvas {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+    #downloadLink {
+      margin-top: 20px;
+      display: inline-block;
+      font-size: 18px;
+      color: #fff;
+      background-color: #007BFF;
+      padding: 10px 15px;
+      text-decoration: none;
+      border-radius: 5px;
+      display: none; /* Initially hidden */
+    }
+    #downloadLink:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Πρόσκληση Generator</h1>
+  <form id="textForm">
+    <label>
+      Όνομα:
+      <input type="text" id="name" required>
+    </label><br><br>
+    <label>
+      Μέρα:
+      <input type="date" id="date" required>
+    </label><br><br>
+    <label>
+      Ώρα:
+      <input type="time" id="time" required>
+    </label><br><br>
+    <label>
+      Φύλο:
+      <select id="gender" required>
+        <option value="" disabled selected>Select Gender</option>
+        <option value="Male">Αγόρι</option>
+        <option value="Female">Κορίτσι</option>
+      </select>
+    </label><br><br>
+    <button type="button" onclick="generateImage()">Δημιουργία προσκλησης</button>
+  </form>
+
+  <canvas id="imageCanvas" width="1204" height="720"></canvas><br>
+  <a id="downloadLink">Download Image</a>
+
+  <script>
+    // Greek month names array
+    const greekMonths = [
+      'Ιανουαρίου', 'Φεβρουαρίου', 'Μαρτίου', 'Απριλίου', 'Μαίου', 'Ιουνίου',
+      'Ιουλίου', 'Αυγούστου', 'Σεπτεμβρίου', 'Οκτωβρίου', 'Νοεμβρίος', 'Δεκεμβρίου'
+    ];
+
+    function generateImage() {
+      // Get form values
+      const name = document.getElementById('name').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const gender = document.getElementById('gender').value;
+
+      if (!gender) {
+        alert("Please select a gender.");
+        return;
+      }
+
+      // Gender-specific word
+      const genderWord = gender === "Male" ? "Ο ΦΙΛΟΣ" : "Η ΦΙΛΗ";
+
+      // Get the canvas and context
+      const canvas = document.getElementById('imageCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // Load the base image
+      const img = new Image();
+      img.src = 'imageCanvas.png'; // Replace with your image path
+      img.onload = function () {
+        // Load fonts and ensure they are ready before drawing
+        Promise.all([
+          document.fonts.load('30px "Noto Serif"'),
+          document.fonts.load('30px "Freckle Face"')
+        ]).then(function () {
+          // Draw the image
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          // Set text properties
+          ctx.fillStyle = 'black';
+
+          // Draw σε προσκαλω in Noto Serif
+          ctx.font = '60px "Noto Serif"';
+          const firstText = 'ΣΕ ΠΡΟΣΚΑΛΩ ΣΤΟ PARTY ΜΟΥ,';
+          const firstTextWidth = ctx.measureText(firstText).width;
+          const firstTextX = (canvas.width - firstTextWidth) / 2;  // Centering the first text
+          ctx.fillText(firstText, firstTextX, 460); // Draw the first text at y = 50
+
+          const nameText = `${genderWord} ΣΟΥ ${name}!`;
+          const nameTextWidth = ctx.measureText(nameText).width;
+          const nameTextX = (canvas.width - nameTextWidth) / 2;  // Centering the name text
+          const nameTextY = 460 + 60; // Adding some spacing (40px) below the first text
+          ctx.font = '60px "Noto Serif"'; // Keep the same font for name text
+          ctx.fillText(nameText, nameTextX, nameTextY);  // Draw the second text at the new Y position
+
+          // Format the date
+          const formattedDate = formatDate(date);
+
+          // Draw the date with different font sizes for the number and the month
+          const dateParts = formattedDate.split('/');
+          const day = dateParts[0]; // The day (number)
+          const month = dateParts[1]; // The Greek month
+
+          // Draw the day (number) with a larger font size
+          ctx.font = '130px "Freckle Face"';  // Larger font for the number
+          ctx.fillText(`${day}`, 850, 220);
+
+          // Draw the month with a smaller font size
+          ctx.font = '35px "Noto Serif"';  // Smaller font for the month
+          ctx.fillText(`/${month}`, 745 + ctx.measureText(day).width + 200, 220); // Offset month after the number
+
+          // Draw time (numbers) in Freckle Face
+          ctx.font = '100px "Freckle Face"';
+          ctx.fillText(`${time}`, 900, 340);
+        }).catch(function (err) {
+          console.error("Font loading failed:", err);
+        });
+      };
+    }
+
+    function formatDate(date) {
+      // Parse the date input
+      const dateObj = new Date(date);
+
+      // Extract the day and month
+      const day = dateObj.getDate();
+      const monthIndex = dateObj.getMonth(); // 0 = January, 1 = February, etc.
+
+      // Get the Greek month name
+      const greekMonth = greekMonths[monthIndex];
+
+      // Return the formatted date as "day/month"
+      return `${day}/${greekMonth}`;
+    }
+  </script>
+</body>
+</html>
+
+
